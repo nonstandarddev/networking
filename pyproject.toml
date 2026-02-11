@@ -1,7 +1,9 @@
 [project]
 name = "networking"
 version = "0.1.0"
-description = "Add your description here"
+description = "An introduction to networking concepts in Python"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "click>=8.3.1",
+]
