@@ -7,6 +7,7 @@ import click
 def main(
     port: int,
     host: str = "",
+    acknowledgement: str = "Acknowledged.",
     encoding: str = "ISO-8859-1",
     socket_address_family = socket.AF_INET,
     socket_type = socket.SOCK_STREAM
@@ -22,10 +23,10 @@ def main(
     http: str = (
         "HTTP/1.1 200 OK\r\n"
         "Content-Type: text/plain\r\n"
-        "Content-Length: 6\r\n"
+        f"Content-Length: {len(acknowledgement)}\r\n"
         "Connection: close\r\n"
         "\r\n"
-        "Hello!"
+        f"{acknowledgement}"
         "\r\n\r\n"
     )
     encoded = http.encode(encoding)
