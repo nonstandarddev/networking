@@ -8,18 +8,28 @@ import click
 def main(
     host: str,
     port: int,
-    encoding: str = "ISO-8859-1"
+    encoding: str = "ISO-8859-1",
+    socket_address_family = socket.AF_INET,
+    socket_type = socket.SOCK_STREAM
 ):
-    
+    """
+    A simple web client program.
+
+    Note that:
+
+    * `socket.AF_INET` indicates that we will use IPv4 addresses to communicate
+    * `socket.SOCK_STREAM` indicates that we will be using TCP (`SOCK_DGRAM` indicates UDP)
+    """
+
     http: str = (
-        f"GET / HTTP/1.1\r\n"
+        "GET / HTTP/1.1\r\n"
         f"Host: {host}\r\n"
-        f"Connection: close\r\n"
-        f"\r\n"
+        "Connection: close\r\n"
+        "\r\n"
     )
     encoded = http.encode(encoding)
 
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    with socket.socket(socket_address_family, socket_type) as s:
         s.connect((host, port))
         s.sendall(encoded)
         response = b""
@@ -32,8 +42,6 @@ def main(
     decoded = response.decode(encoding, errors="ignore")
 
     print(decoded)
-    
-    return decoded
 
 
 if __name__ == "__main__":
