@@ -5,9 +5,11 @@ import click
 @click.command()
 @click.option("--host", default="example.com", help="Desired host / website (e.g. 'example.com')")
 @click.option("--port", default=80, help="Desired destination port (defaults to '80' i.e. non-secure HTTP traffic)")
+@click.option("--resource", default="/", help="Desired resource on the destination server")
 def main(
     host: str,
     port: int,
+    resource: str,
     encoding: str = "ISO-8859-1",
     socket_address_family = socket.AF_INET,
     socket_type = socket.SOCK_STREAM
@@ -22,7 +24,7 @@ def main(
     """
 
     http: str = (
-        "GET / HTTP/1.1\r\n"
+        f"GET {resource} HTTP/1.1\r\n"
         f"Host: {host}\r\n"
         "Connection: close\r\n"
         "\r\n"
