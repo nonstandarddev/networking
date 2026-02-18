@@ -8,13 +8,15 @@ MIME_TYPES: dict[str, str] = {
     ".html": "text/html"
 }
 
-HTTP_404: str = """
-    HTTP/1.1 404 Not Found
-    Content-Type: text/plain
-    Content-Length: 13
-    Connection: close
-    404 not found
-"""
+HTTP_404: str = (
+    "HTTP/1.1 404 Not Found\r\n"
+    "Content-Type: text/plain\r\n"
+    "Content-Length: 13\r\n"
+    "Connection: close\r\n"
+    "\r\n"
+    "404 not found"
+    "\r\n\r\n"
+)
 
 
 @click.command()
