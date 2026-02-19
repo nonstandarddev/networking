@@ -1,3 +1,20 @@
+"""
+A simple web server program built in Python.
+
+To administer this server simply run,
+
+```
+uv run webserver.py
+```
+
+This web server (by default) exposes itself to inbound connections on port 28333.
+
+You can modify the server parameters by providing command-line arguments. For instance,
+
+```
+uv run webserver.py --port=8081
+```
+"""
 import socket
 import click
 import os
@@ -7,6 +24,7 @@ MIME_TYPES: dict[str, str] = {
     ".txt": "text/plain",
     ".html": "text/html"
 }
+
 
 HTTP_404: str = (
     "HTTP/1.1 404 Not Found\r\n"
@@ -19,93 +37,98 @@ HTTP_404: str = (
 )
 
 
+class WebServer:
+
+    def __init__(
+        self, 
+        host: str = "",
+        port: int = 28333, 
+        encoding: str = "ISO-8859-1"
+    ):
+        self.host = host
+        self.port = port
+        self.encoding = encoding
+
+    def expose(self):
+        """
+        Expose web server to incoming connections.
+        """
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            s.bind((self.host, self.port))
+            s.listen()
+            print(f"Listening on {self.host or 'localhost'}:{self.port}")
+
+            while True:
+                conn, addr = s.accept()
+                print("Connected by:", addr)
+                with conn:
+                    self.handle_connection(conn)
+
+    def handle_connection(self, conn):
+        request = self.read_request(conn)
+        if not request:
+            return
+
+        method, path, protocol = self.parse_request_line(request)
+        filename = path.split("/")[-1]
+
+        response = self.build_response(filename)
+        conn.sendall(response)
+
+    def read_request(self, conn):
+        buffer = b""
+        while b"\r\n\r\n" not in buffer:
+            chunk = conn.recv(4096)
+            if not chunk:
+                break
+            buffer += chunk
+        return buffer.decode(self.encoding, errors="ignore")
+
+    def parse_request_line(self, request):
+        first_line = request.split("\r\n")[0]
+        return first_line.split(" ")
+
+    def build_response(self, filename):
+        extension = os.path.splitext(filename)[1]
+
+        if extension not in MIME_TYPES:
+            return HTTP_404.encode(self.encoding)
+
+        try:
+            with open(os.path.join("resources", filename), "rb") as fp:
+                content = fp.read()
+        except FileNotFoundError:
+            return HTTP_404.encode(self.encoding)
+
+        headers = (
+            "HTTP/1.1 200 OK\r\n"
+            f"Content-Type: {MIME_TYPES[extension]}\r\n"
+            f"Content-Length: {len(content)}\r\n"
+            "Connection: close\r\n"
+            "\r\n"
+        )
+
+        return headers.encode(self.encoding) + content + b"\r\n\r\n"
+
+
+
 @click.command()
 @click.option("--port", default=28333, help="Desired destination port (defaults to '80' i.e. non-secure HTTP traffic)")
 def main(
     port: int,
     host: str = "",
-    encoding: str = "ISO-8859-1",
-    socket_address_family = socket.AF_INET,
-    socket_type = socket.SOCK_STREAM
+    encoding: str = "ISO-8859-1"
 ):
     """
-    A simple web server program.
-
-    Note that:
-
-    * `socket.AF_INET` indicates that we will use IPv4 addresses to communicate
-    * `socket.SOCK_STREAM` indicates that we will be using TCP (`SOCK_DGRAM` indicates UDP)
+    A simple web server CLI.
     """
-
-    with socket.socket(socket_address_family, socket_type) as s:
-
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.bind((host, port))
-        s.listen()
-        print(f"Listening on: Host ({"localhost" if not host else host}), Port ({port})...")
-
-        while True:
-
-            s_new, s_addr = s.accept()
-            print("Connected by: ", s_addr)
-
-            with s_new:
-
-                buffer = b""
-                while b"\r\n\r\n" not in buffer:
-                    chunk = s_new.recv(4096)
-                    if not chunk:
-                        break
-                    buffer += chunk
-                
-                decoded = buffer.decode(encoding=encoding, errors="ignore")
-                lines = decoded.split("\r\n")
-
-                request_header = lines[0]
-                request_header_components = request_header.split(" ")
-
-                # a) Parse request header item (to get the file path)
-                request_method = request_header_components[0]
-                request_path = request_header_components[1]
-                request_protocol = request_header_components[2]
-
-                # b) Strip the path off (for security reasons)
-                request_file = request_path.split("/")[-1]
-
-                # c) Determine file type
-                try:
-                    extension = os.path.splitext(request_file)[1]
-                    content_type = MIME_TYPES[extension]
-                except KeyError:
-                    print(f"File with extension '{extension}' not supported by this web server")
-                    encoded = HTTP_404.encode(encoding)
-                    s_new.sendall(encoded)
-                    continue
-
-                # d) Read the data from the named file
-                try:
-                    with open(os.path.join("resources", request_file), "rb") as fp:
-                        content = fp.read() 
-                except FileNotFoundError:
-                    print(f"Requested resource '{request_file}' cannot be found on this web server")
-                    encoded = HTTP_404.encode(encoding)
-                    s_new.sendall(encoded)
-                    continue
-
-                # e) Build HTTP response packet
-                http: str = (
-                    "HTTP/1.1 200 OK\r\n"
-                    f"Content-Type: {content_type}\r\n"
-                    f"Content-Length: {len(content)}\r\n"
-                    "Connection: close\r\n"
-                    "\r\n"
-                    f"{content}"
-                    "\r\n\r\n"
-                )
-                encoded = http.encode(encoding)
-
-                # d) Issue HTTP response packet to the client
-                s_new.sendall(encoded)
+    ws = WebServer(
+        host,
+        port,
+        encoding
+    )
+    ws.expose()
 
 
 if __name__ == "__main__":
