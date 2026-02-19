@@ -1,4 +1,4 @@
-# Networking (with Python!)
+# Networking (with Python!) :satellite:
 
 This repository is dedicated to spreading knowledge about TCP / IP and, more generally, how
 inter-network communication works 'under the hood'.
@@ -7,7 +7,7 @@ It is informed by Beej's "Guide to Networking" which can be found [here](https:/
 
 # Usage
 
-## Setup
+## Setup :toolbox:
 
 To setup this repository using `uv`, simply type,
 
