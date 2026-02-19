@@ -112,7 +112,6 @@ class WebServer:
         return headers.encode(self.encoding) + content + b"\r\n\r\n"
 
 
-
 @click.command()
 @click.option("--port", default=28333, help="Desired destination port (defaults to '80' i.e. non-secure HTTP traffic)")
 def main(
